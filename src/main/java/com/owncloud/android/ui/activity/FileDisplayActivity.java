@@ -86,6 +86,8 @@ import com.owncloud.android.services.observer.FileObserverService;
 import com.owncloud.android.syncadapter.FileSyncAdapter;
 import com.owncloud.android.ui.dialog.SortingOrderDialogFragment;
 import com.owncloud.android.ui.events.TokenPushEvent;
+import com.owncloud.android.ui.dialog.CreateFolderDialogFragment;
+import com.owncloud.android.ui.dialog.UploadSourceDialogFragment;
 import com.owncloud.android.ui.fragment.ExtendedListFragment;
 import com.owncloud.android.ui.fragment.FileDetailFragment;
 import com.owncloud.android.ui.fragment.FileFragment;
@@ -142,6 +144,11 @@ public class FileDisplayActivity extends HookActivity
 
     private static final String SORT_ORDER_DIALOG_TAG = "SORT_ORDER_DIALOG";
 
+    public static final String EXTRA_UPLOAD_FROM_WIDGET =
+            "com.owncloud.android.ui.activity.UPLOAD_FROM_WIDGET";
+    public static final String EXTRA_NEW_FROM_WIDGET =
+            "com.owncloud.android.ui.activity.NEW_FROM_WIDGET";
+
     public static final String ACTION_DETAILS = "com.owncloud.android.ui.activity.action.DETAILS";
 
     public static final String DRAWER_MENU_ID = "DRAWER_MENU_ID";
@@ -162,6 +169,9 @@ public class FileDisplayActivity extends HookActivity
 
     private boolean mSyncInProgress = false;
 
+    private static String DIALOG_CREATE_FOLDER = "DIALOG_CREATE_FOLDER";
+    private static String DIALOG_UPLOAD_SOURCE = "DIALOG_UPLOAD_SOURCE";
+
     private OCFile mWaitingToSend;
 
     private Collection<MenuItem> mDrawerMenuItemstoShowHideList;
@@ -169,7 +179,11 @@ public class FileDisplayActivity extends HookActivity
     private String searchQuery;
 
     private SearchView searchView;
+    private boolean mUploadFromWidget = false;
+    private boolean mNewFromWidget = false;
+    private boolean mRefreshFromWidget = false;
 
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log_OC.v(TAG, "onCreate() start");
@@ -193,7 +207,12 @@ public class FileDisplayActivity extends HookActivity
             mWaitingToPreview = null;
             mSyncInProgress = false;
             mWaitingToSend = null;
-        }
+
+            mUploadFromWidget = getIntent().getBooleanExtra(
+                    FileDisplayActivity.EXTRA_UPLOAD_FROM_WIDGET, false);
+            mNewFromWidget = getIntent().getBooleanExtra(
+                    FileDisplayActivity.EXTRA_NEW_FROM_WIDGET, false);
+        }        
 
         /// USER INTERFACE
 
@@ -345,6 +364,22 @@ public class FileDisplayActivity extends HookActivity
             default:
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
+    }
+
+
+
+    @Override
+    protected void onStop() {
+        Log_OC.v(TAG, "onStop() start");
+        super.onStop();
+        Log_OC.v(TAG, "onStop() end");
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log_OC.v(TAG, "onDestroy() start");
+        super.onDestroy();
+        Log_OC.v(TAG, "onDestroy() end");
     }
 
     /**
@@ -2130,9 +2165,23 @@ public class FileDisplayActivity extends HookActivity
     }
 
     @Override
-    public void onStart() {
+    protected void onStart() {
+        Log_OC.v(TAG, "onStart() start");
         super.onStart();
         EventBus.getDefault().post(new TokenPushEvent());
-    }
 
+        // Widget Actions
+        if (mUploadFromWidget) {
+            UploadSourceDialogFragment dialog =
+                    UploadSourceDialogFragment.newInstance(getAccount());
+            dialog.show(getSupportFragmentManager(), DIALOG_UPLOAD_SOURCE);
+        }
+        if (mNewFromWidget) {
+            CreateFolderDialogFragment dialog =
+                    CreateFolderDialogFragment.newInstance(getCurrentDir());
+            dialog.show(getSupportFragmentManager(), DIALOG_CREATE_FOLDER);
+        }
+
+        Log_OC.v(TAG, "onStart() end");
+    }
 }
